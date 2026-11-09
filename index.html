@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peluqueria - Control de Citas y Pagos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans">
+
+  <!-- Navegacion por Roles -->
+  <nav class="bg-indigo-700 p-4 text-white flex justify-around font-bold">
+    <button onclick="verVista('cliente')">1. Agendar Cita</button>
+    <button onclick="verVista('estilista')">2. Agenda Estilista</button>
+    <button onclick="verVista('jefa')">3. Panel Jefa</button>
+  </nav>
+
+  <div class="max-w-4xl mx-auto p-6">
+    <!-- VISTA CLIENTE -->
+    <section id="vista-cliente" class="block bg-white p-6 rounded shadow">
+      <h2 class="text-2xl font-bold mb-4 text-indigo-700">Agendar Cita</h2>
+      <!-- Formulario: Nombre, Estilista, Fecha, Hora -->
+    </section>
+
+    <!-- VISTA ESTILISTA -->
+    <section id="vista-estilista" class="hidden bg-white p-6 rounded shadow">
+      <h2 class="text-2xl font-bold mb-4 text-indigo-700">Turnos Asignados</h2>
+      <!-- Lista de citas y modal para marcar completado + elegir metodo de pago -->
+    </section>
+
+    <!-- VISTA JEFA -->
+    <section id="vista-jefa" class="hidden bg-white p-6 rounded shadow">
+      <h2 class="text-2xl font-bold mb-4 text-indigo-700">Resumen Financiero y Nomina</h2>
+      <!-- Cajas de Totales (Efectivo, Tarjeta, Transferencia) y Calculadora del 60% -->
+    </section>
+  </div>
+
+  <script>
+    function verVista(vista) {
+      document.getElementById('vista-cliente').classList.add('hidden');
+      document.getElementById('vista-estilista').classList.add('hidden');
+      document.getElementById('vista-jefa').classList.add('hidden');
+      document.getElementById('vista-' + vista).classList.remove('hidden');
+    }
+  </script>
+</body>
+</html>
