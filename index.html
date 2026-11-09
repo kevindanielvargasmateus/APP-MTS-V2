@@ -3,45 +3,215 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peluqueria - Control de Citas y Pagos</title>
+  <title>Control de Citas y Pagos - Mateus Studio</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans">
 
-  <!-- Navegacion por Roles -->
-  <nav class="bg-indigo-700 p-4 text-white flex justify-around font-bold">
-    <button onclick="verVista('cliente')">1. Agendar Cita</button>
-    <button onclick="verVista('estilista')">2. Agenda Estilista</button>
-    <button onclick="verVista('jefa')">3. Panel Jefa</button>
+  <!-- Navegación por Roles -->
+  <nav class="bg-indigo-700 p-4 text-white flex flex-wrap justify-around font-bold">
+    <button onclick="verVista('cliente')" class="hover:text-indigo-200">1. Agendar Cita</button>
+    <button onclick="verVista('estilista')" class="hover:text-indigo-200">2. Agenda Estilista</button>
+    <button onclick="verVista('jefa')" class="hover:text-indigo-200">3. Panel Jefa</button>
   </nav>
 
   <div class="max-w-4xl mx-auto p-6">
-    <!-- VISTA CLIENTE -->
+    
+    <!-- VISTA 1: CLIENTE -->
     <section id="vista-cliente" class="block bg-white p-6 rounded shadow">
       <h2 class="text-2xl font-bold mb-4 text-indigo-700">Agendar Cita</h2>
-      <!-- Formulario: Nombre, Estilista, Fecha, Hora -->
+      <form id="formAgendar" onsubmit="agendarCita(event)" class="flex flex-col gap-4">
+        <input type="text" id="nombreCliente" placeholder="Tu Nombre" required class="border p-2 rounded">
+        <select id="estilistaSeleccionado" required class="border p-2 rounded">
+          <option value="" disabled selected>Selecciona tu estilista</option>
+          <option value="Estilista 1">Estilista 1</option>
+          <option value="Estilista 2">Estilista 2</option>
+        </select>
+        <div class="flex gap-4">
+          <input type="date" id="fechaCita" required class="border p-2 rounded w-1/2">
+          <input type="time" id="horaCita" required class="border p-2 rounded w-1/2">
+        </div>
+        <button type="submit" class="bg-indigo-600 text-white font-bold py-2 rounded mt-2">Confirmar Cita</button>
+      </form>
     </section>
 
-    <!-- VISTA ESTILISTA -->
+    <!-- VISTA 2: ESTILISTA -->
     <section id="vista-estilista" class="hidden bg-white p-6 rounded shadow">
-      <h2 class="text-2xl font-bold mb-4 text-indigo-700">Turnos Asignados</h2>
-      <!-- Lista de citas y modal para marcar completado + elegir metodo de pago -->
+      <h2 class="text-2xl font-bold mb-4 text-indigo-700">Turnos Pendientes</h2>
+      <div id="listaCitas" class="flex flex-col gap-3">
+        <!-- Las citas aparecerán aquí mediante JavaScript -->
+      </div>
     </section>
 
-    <!-- VISTA JEFA -->
+    <!-- VISTA 3: JEFA -->
     <section id="vista-jefa" class="hidden bg-white p-6 rounded shadow">
-      <h2 class="text-2xl font-bold mb-4 text-indigo-700">Resumen Financiero y Nomina</h2>
-      <!-- Cajas de Totales (Efectivo, Tarjeta, Transferencia) y Calculadora del 60% -->
+      <h2 class="text-2xl font-bold mb-4 text-indigo-700">Resumen Financiero y Nómina</h2>
+      <div id="reporteFinanciero">
+        <!-- Los cálculos aparecerán aquí mediante JavaScript -->
+      </div>
     </section>
   </div>
 
-  <script>
-    function verVista(vista) {
+  <!-- SCRIPT DE FIREBASE Y LÓGICA (Módulo) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    // AQUI DEBES PEGAR TU FIREBASE CONFIG
+    const firebaseConfig = {
+  apiKey: "AIzaSyBxEmD4ZfVQ8h5pnUpIl2P1aIkX1xZyaTM",
+  authDomain: "peluqueria-db-a740d.firebaseapp.com",
+  projectId: "peluqueria-db-a740d",
+  storageBucket: "peluqueria-db-a740d.firebasestorage.app",
+  messagingSenderId: "215205613774",
+  appId: "1:215205613774:web:aab4baef1c3dcccd7e809f",
+  measurementId: "G-DSF67YSTKX"
+};
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    window.verVista = function(vista) {
       document.getElementById('vista-cliente').classList.add('hidden');
       document.getElementById('vista-estilista').classList.add('hidden');
       document.getElementById('vista-jefa').classList.add('hidden');
       document.getElementById('vista-' + vista).classList.remove('hidden');
-    }
+
+      if (vista === 'estilista') cargarCitasEstilista();
+      if (vista === 'jefa') cargarReporteJefa();
+    };
+
+    window.agendarCita = async function(event) {
+      event.preventDefault();
+      const cliente = document.getElementById('nombreCliente').value;
+      const estilista = document.getElementById('estilistaSeleccionado').value;
+      const fecha = document.getElementById('fechaCita').value;
+      const hora = document.getElementById('horaCita').value;
+
+      try {
+        await addDoc(collection(db, "citas"), {
+          cliente, estilista, fecha, hora, estado: "pendiente", monto: 0, metodo_pago: ""
+        });
+        alert("¡Cita agendada con éxito!");
+        document.getElementById('formAgendar').reset();
+      } catch (e) {
+        console.error("Error al agendar: ", e);
+      }
+    };
+
+    window.cargarCitasEstilista = async function() {
+      const lista = document.getElementById('listaCitas');
+      lista.innerHTML = 'Cargando turnos...';
+      
+      const q = query(collection(db, "citas"), where("estado", "==", "pendiente"));
+      const querySnapshot = await getDocs(q);
+      
+      lista.innerHTML = '';
+      if (querySnapshot.empty) {
+        lista.innerHTML = '<p class="text-gray-500">No hay turnos pendientes.</p>';
+        return;
+      }
+
+      querySnapshot.forEach((documento) => {
+        const cita = documento.data();
+        lista.innerHTML += `
+          <div class="border border-gray-300 p-4 rounded bg-gray-50 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+              <p><strong>Cliente:</strong> ${cita.cliente}</p>
+              <p class="text-sm text-gray-600"><strong>Estilista:</strong> ${cita.estilista} | <strong>Fecha:</strong> ${cita.fecha} ${cita.hora}</p>
+            </div>
+            <div class="flex gap-2 items-center">
+              <input type="number" id="monto-${documento.id}" placeholder="Cobro ($)" class="border p-2 rounded w-28">
+              <select id="metodo-${documento.id}" class="border p-2 rounded">
+                <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
+                <option value="Tarjeta">Tarjeta</option>
+              </select>
+              <button onclick="completarCita('${documento.id}')" class="bg-green-600 text-white font-bold px-4 py-2 rounded">Cobrar</button>
+            </div>
+          </div>
+        `;
+      });
+    };
+
+    window.completarCita = async function(id) {
+      const monto = parseFloat(document.getElementById(`monto-${id}`).value);
+      const metodo = document.getElementById(`metodo-${id}`).value;
+
+      if (!monto || monto <= 0) {
+        alert("Por favor ingresa un monto válido.");
+        return;
+      }
+
+      try {
+        await updateDoc(doc(db, "citas", id), {
+          estado: "completada",
+          monto: monto,
+          metodo_pago: metodo
+        });
+        alert("Cobro registrado exitosamente.");
+        cargarCitasEstilista(); 
+      } catch (e) {
+        console.error("Error al cobrar: ", e);
+      }
+    };
+
+    window.cargarReporteJefa = async function() {
+      const reporte = document.getElementById('reporteFinanciero');
+      reporte.innerHTML = 'Calculando nómina...';
+
+      const q = query(collection(db, "citas"), where("estado", "==", "completada"));
+      const querySnapshot = await getDocs(q);
+
+      let totalEfectivo = 0, totalTransferencia = 0, totalTarjeta = 0;
+      let nomina = {};
+
+      querySnapshot.forEach((documento) => {
+        const cita = documento.data();
+        const monto = cita.monto;
+
+        if (cita.metodo_pago === 'Efectivo') totalEfectivo += monto;
+        if (cita.metodo_pago === 'Transferencia') totalTransferencia += monto;
+        if (cita.metodo_pago === 'Tarjeta') totalTarjeta += monto;
+
+        const pagoEstilista = monto * 0.60;
+        if (!nomina[cita.estilista]) nomina[cita.estilista] = 0;
+        nomina[cita.estilista] += pagoEstilista;
+      });
+
+      let htmlReporte = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div class="bg-green-100 p-4 rounded border border-green-300 text-center">
+            <p class="text-sm text-green-700">Total Efectivo</p>
+            <p class="text-2xl font-bold">$${totalEfectivo}</p>
+          </div>
+          <div class="bg-blue-100 p-4 rounded border border-blue-300 text-center">
+            <p class="text-sm text-blue-700">Total Transferencias</p>
+            <p class="text-2xl font-bold">$${totalTransferencia}</p>
+          </div>
+          <div class="bg-yellow-100 p-4 rounded border border-yellow-300 text-center">
+            <p class="text-sm text-yellow-700">Total Tarjeta</p>
+            <p class="text-2xl font-bold">$${totalTarjeta}</p>
+          </div>
+        </div>
+
+        <h3 class="text-xl font-bold mb-4 bg-indigo-700 text-white p-2 rounded">Nómina a Pagar (60%)</h3>
+        <div class="bg-gray-50 border rounded p-4">
+      `;
+
+      if (Object.keys(nomina).length === 0) {
+        htmlReporte += `<p>No hay turnos completados aún.</p>`;
+      } else {
+        htmlReporte += `<ul class="divide-y divide-gray-300">`;
+        for (const [estilista, total] of Object.entries(nomina)) {
+          htmlReporte += `<li class="py-2 flex justify-between"><span>${estilista}</span> <strong class="text-lg">$${total.toFixed(2)}</strong></li>`;
+        }
+        htmlReporte += `</ul>`;
+      }
+
+      htmlReporte += `</div>`;
+      reporte.innerHTML = htmlReporte;
+    };
   </script>
 </body>
 </html>
