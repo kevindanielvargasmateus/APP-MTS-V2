@@ -39,6 +39,18 @@
       transition: opacity 0.8s ease-out;
     }
   </style>
+
+  <!-- Fuente elegante Playfair Display -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+
+  <style>
+    .fuente-elegante {
+      font-family: 'Playfair Display', serif;
+    }
+    .letra-m-rosa {
+      color: #ff66b2; /* Tono rosa destacado */
+    }
+  </style>
 </head>
 
 <body class="bg-gray-50 font-sans antialiased text-gray-800">
@@ -68,7 +80,9 @@
   <!-- NAVEGACIÓN PRINCIPAL -->
   <nav class="bg-black/95 backdrop-blur-md fixed w-full z-50 top-0 left-0 border-b border-gray-800">
     <div class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-      <h1 class="text-white text-2xl font-black tracking-widest cursor-pointer" onclick="verVista('inicio')">MATEUS STUDIO</h1>
+      <a href="#" class="fuente-elegante text-2xl font-bold tracking-wide text-white flex items-center gap-0.5 hover:opacity-90 transition">
+        <span class="letra-m-rosa text-3xl font-black">M</span>ateus Peluquería
+      </a>
       <div class="flex gap-4 md:gap-6 text-gray-300 font-semibold text-xs md:text-sm">
         <button onclick="verVista('inicio')" class="hover:text-white transition">INICIO</button>
         <button onclick="verVista('estilista')" class="hover:text-white transition">ESTILISTAS</button>
